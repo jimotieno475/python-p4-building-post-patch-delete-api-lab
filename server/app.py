@@ -28,7 +28,30 @@ def bakery_by_id(id):
 
     bakery = Bakery.query.filter_by(id=id).first()
     bakery_serialized = bakery.to_dict()
-    return make_response ( bakery_serialized, 200  )
+    # return make_response ( bakery_serialized, 200  )
+
+    if bakery == None:
+        response_body = {
+            "message": "This record does not exist in our database. Please try again."
+        }
+        response = make_response(jsonify(response_body), 404)
+    elif request.method == 'PATCH':
+            bakery = Bakery.query.filter_by(id=id).first()
+
+            for attr in request.form:
+                setattr(bakery, attr, request.form.get(attr))
+
+            db.session.add(bakery)
+            db.session.commit()
+
+            review_dict = bakery.to_dict()
+
+            response = make_response(
+                jsonify(review_dict),
+                200
+            )
+
+            return response
 
 @app.route('/baked_goods/by_price')
 def baked_goods_by_price():
@@ -44,6 +67,35 @@ def most_expensive_baked_good():
     most_expensive = BakedGood.query.order_by(BakedGood.price.desc()).limit(1).first()
     most_expensive_serialized = most_expensive.to_dict()
     return make_response( most_expensive_serialized,   200  )
+
+@app.route('/baked_goods/<int:id>',method=['DELETE'])
+def baked_goods_by_id(id):
+    baked_good= BakedGood.query.filter_by(id=id).first()
+
+
+    if baked_good == None:
+        response_body = {
+            "message": "This record does not exist in our database. Please try again."
+        }
+        response = make_response(jsonify(response_body), 404)
+
+        return response
+    elif request.method == 'DELETE':
+        db.session.delete(baked_good)
+        db.session.commit()
+
+        response_body = {
+            "delete_successful": True,
+            "message": " BakedGood deleted."    
+            }
+
+        response = make_response(
+            jsonify(response_body),
+            200
+            )
+
+        return response
+   
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
